@@ -11,29 +11,46 @@ function threadsConfig(){
 }
 
 function lscpuInfo(){
+	thr=$1
+
 	lscpu > lscpuLog.txt
 	grep -f filtroLscpu.txt lscpuLog.txt > lscpuTemp.txt
 	sed -e 's/.*://' -e 's/  */ /g' lscpuTemp.txt > lscpuCompact.txt
 	rm lscpuTemp.txt
 
-	currNode=0
+
+	#FOR COMPACT
 	nodesInUse=0
 
 	cores=$( grep -c ^processor /proc/cpuinfo )
 	nodeCount=$(wc -l lscpuCompact.txt | awk '{ print $1 }')
 	coresPerNode=$((cores/nodeCount))
 
-	currNode=$((threads%coresPerNode))
 
-	for ((node=1; node<$nodeCount; node++))
-	do
-		if [ $node -le $((nodeCount-1)) ]
-		then
-			nodesInUse="$nodesInUse,"
-		fi
-		nodesInUse="$nodesInUse$node"
-	done
+	if [ $thr -ge $coresPerNode ]
+	then
+		for ((node=1; node<$nodeCount; node++))
+		do
+			if [ $node -le $((nodeCount-1)) ]
+			then
+				nodesInUse="$nodesInUse,"
+			fi
+			nodesInUse="$nodesInUse$node"
+		done
+	fi
+
+	echo "nodesInUse"
+	echo $nodesInUse
+
+	#FOR SCATTER	
+	scatterThreads="0-"$(($((thr%$((coresPerNode+1))))-1))
+
+	echo "scatterThreads"
+	echo $scatterThreads
+	echo " "
+
 }
+
 
 function timeDataEdit(){
 	sed -r 's/\s+//g' timeDataFull.txt
@@ -71,12 +88,39 @@ function stats(){
 }
 
 function benchConfig(){
-	
+	version=$1
+
 	for (( i=0; i<=$threads; i=i+$interval ))
 	do
+
 		if [ $i -eq 0 ]
 		then
 			i=1
+		fi
+
+		if [ $version -eq 0 ] 
+		then
+			versionApp=() #linux
+		fi
+		if [ $version -eq 1 ]
+		then
+			versionApp="numactl --interleave=all" #round robin
+		fi
+
+		if [ $version -eq 2 ]
+		then
+			lscpuInfo $i
+			versionApp="numactl --membind=$nodesInUse" #"close RAM"
+		fi
+		if [ $version -eq 3 ]
+		then
+			lscpuInfo $i
+			versionApp="numactl --cpubind=$nodesInUse" #"close THREADS"
+		fi
+		if [ $version -eq 4 ]
+		then
+			lscpuInfo $i
+			versionApp="numactl --physcpubind=+$scatterThreads --cpubind=$nodesInUse" #scatter
 		fi
 
 		for ((j=1; j<=$testQtd; j++))
@@ -159,23 +203,9 @@ testQtd=10
 
 threadsConfig
 
-for version in {0..2}
+for version in {0..4}
 do
-	if [ $version -eq 0 ]
-	then
-		versionApp=()
-	fi
-	if [ $version -eq 1 ]
-	then
-		versionApp="numactl --interleave=all" #round robin = scatter
-	fi
-	if [ $version -eq 2 ]
-	then
-		lscpuInfo
-		versionApp="numactl --cpubind=$nodesInUse --membind=$nodesInUse" #"close"
-	fi
-
-	benchConfig
+	benchConfig $version
 done
 
 mkdir Graphs

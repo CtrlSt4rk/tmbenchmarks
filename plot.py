@@ -37,6 +37,7 @@ for g in range (0,9): #9 benchmarks
 		r1 = np.arange(len(graphThreads))
 		r2 = [x + barWidth for x in r1]
 		r3 = [x + barWidth for x in r2]
+		r4 = [x + barWidth for x in r3]
 
 		if v==0:
 			plt.bar(r1, graphTime, width=barWidth, edgecolor='black', label = "Linux")
@@ -49,9 +50,19 @@ for g in range (0,9): #9 benchmarks
 			plt.xticks(r2, graphThreads, rotation ='horizontal')
 
 		if v==2:
-			plt.bar(r3, graphTime, width=barWidth, edgecolor='black', label = "Compact")
+			plt.bar(r3, graphTime, width=barWidth, edgecolor='black', label = "Compact (RAM)")
 			plt.errorbar(r3, graphTime, graphStddev, marker='^', linestyle='None', color='black')
 			plt.xticks(r3, graphThreads, rotation ='horizontal')
+
+		if v==3:
+			plt.bar(r4, graphTime, width=barWidth, edgecolor='black', label = "Compact (Threads)")
+			plt.errorbar(r4, graphTime, graphStddev, marker='^', linestyle='None', color='black')
+			plt.xticks(r4, graphThreads, rotation ='horizontal')
+
+		if v==4:
+			plt.bar(r5, graphTime, width=barWidth, edgecolor='black', label = "Scatter")
+			plt.errorbar(r5, graphTime, graphStddev, marker='^', linestyle='None', color='black')
+			plt.xticks(r5, graphThreads, rotation ='horizontal')
 
 	plt.ylabel('Tempo de execução (s)')
 	plt.xlabel('Número de threads')
