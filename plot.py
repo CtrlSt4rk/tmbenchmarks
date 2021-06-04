@@ -19,16 +19,17 @@ for i in range (0, len(version)):
 		if version[i] < version[i-1]: 
 			countchangesv=1
 
-qtdThreads=int(len(threads)/(9*3)) #3 versoes
+qtdThreads=int(len(threads)/(9*countchangesv))
 
 for g in range (0,9): #9 benchmarks
 	fig = plt.figure(figsize=(15,10))
 	fig = plt.gcf()
 
-	for v in range (0, countchangesv):
+	for v in range (0, countchangesv): #5 versions
 		graphTime.clear()
 		graphStddev.clear()
 		graphThreads.clear()
+
 		for i in range (0,qtdThreads): #qtd de threads marcados no gráfico
 			graphTime.append(time[i*9+g+v*45])
 			graphStddev.append(stddev[i*9+g+v*45])
@@ -38,6 +39,7 @@ for g in range (0,9): #9 benchmarks
 		r2 = [x + barWidth for x in r1]
 		r3 = [x + barWidth for x in r2]
 		r4 = [x + barWidth for x in r3]
+		r5 = [x + barWidth for x in r4]
 
 		if v==0:
 			plt.bar(r1, graphTime, width=barWidth, edgecolor='black', label = "Linux")
