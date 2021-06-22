@@ -13,6 +13,8 @@ for line in open('temp.txt', 'r'):
 countchangesv = 1;
 barWidth=0.1
 
+sizeVersion = int(len(version)/5)
+
 for i in range (0, len(version)):
 		if version[i] > version[i-1]:
 			countchangesv += 1
@@ -31,9 +33,9 @@ for g in range (0,9): #9 benchmarks
 		graphThreads.clear()
 
 		for i in range (0,qtdThreads): #qtd de threads marcados no gráfico
-			graphTime.append(time[i*9+g+v*45])
-			graphStddev.append(stddev[i*9+g+v*45])
-			graphThreads.append(threads[i*9+g+v*45])
+			graphTime.append(time[i*9+g+v*sizeVersion])
+			graphStddev.append(stddev[i*9+g+v*sizeVersion])
+			graphThreads.append(threads[i*9+g+v*sizeVersion])
 
 		r1 = np.arange(len(graphThreads))
 		r2 = [x + barWidth for x in r1]
