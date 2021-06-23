@@ -17,43 +17,58 @@ function lscpuInfo(){
 	grep -f filtroLscpu.txt lscpuLog.txt > lscpuTemp.txt
 	sed -e 's/.*://' -e 's/  */ /g' lscpuTemp.txt > lscpuCompact.txt
 	rm lscpuTemp.txt
-
-
-	#FOR COMPACT
-	nodesInUse=0
-
+	
 	cores=$( grep -c ^processor /proc/cpuinfo )
 	nodeCount=$(wc -l lscpuCompact.txt | awk '{ print $1 }')
 	coresPerNode=$((cores/nodeCount))
 
-	if [ $thr -ge $coresPerNode ]
+	#FOR COMPACT
+	if [[ $version -eq 2 || $version -eq 3 ]]
 	then
-		for ((node=1; node<$nodeCount; node++))
-		do
-			if [ $node -le $((nodeCount-1)) ]
-			then
-				nodesInUse="$nodesInUse,"
-			fi
-			nodesInUse="$nodesInUse$node"
-		done
+		nodesInUse=0
+
+		if [ $thr -ge $coresPerNode ]
+		then
+			for ((node=1; node<$nodeCount; node++))
+			do
+				if [ $node -le $((nodeCount-1)) ]
+				then
+					nodesInUse="$nodesInUse,"
+				fi
+				nodesInUse="$nodesInUse$node"
+			done
+		fi
 	fi
 
 	#FOR SCATTER
-	
-	incr=1
-	for (( i=1; i<=$(($thr/$nodeCount)); i=i+1 ))
-	do
-		for (( j=0; j<$nodeCount; j=j+1 ))
+	if [ $version -eq 4 ]
+	then
+		incr=1
+
+		for (( i=1; i<=$(($thr/$nodeCount)); i=i+1 ))
 		do
-			if [[ $j -eq 0 && $i -eq 1 ]]
+			for (( j=0; j<$nodeCount; j=j+1 ))
+			do
+				if [[ $j -eq 0 && $i -eq 1 ]]
+				then
+					scatterThreads="0"
+				else
+					scatterThreads=$scatterThreads,"$(($(($j*$coresPerNode))+$(($incr-1))))"
+				fi
+			done
+			incr=$(($incr+1))
+		done
+
+		for (( i=0; i<$nodeCount; i=i+1 ))
+		do
+			if [ $i -eq 0 ]
 			then
-				scatterThreads="0"
+				scatterNodes="0"
 			else
-				scatterThreads=$scatterThreads,"$(($(($j*$coresPerNode))+$(($incr-1))))"
+				scatterNodes=$scatterNodes,"$i"
 			fi
 		done
-		incr=$(($incr+1))
-	done
+	fi
 }
 
 function timeDataEdit(){
@@ -92,10 +107,8 @@ function stats(){
 }
 
 function benchConfig(){
-	version=$1
 	for (( i=0; i<=$threads; i=i+$interval ))
 	do
-
 		if [ $i -eq 0 ]
 		then
 			i=1
@@ -113,17 +126,17 @@ function benchConfig(){
 		if [ $version -eq 2 ]
 		then
 			lscpuInfo $i
-			versionApp="numactl --membind=$nodesInUse" #"close RAM"
+			versionApp="numactl --membind=$nodesInUse" #"compact RAM"
 		fi
 		if [ $version -eq 3 ]
 		then
 			lscpuInfo $i
-			versionApp="numactl --cpubind=$nodesInUse" #"close THREADS"
+			versionApp="numactl --cpubind=$nodesInUse" #"compact THREADS"
 		fi
 		if [ $version -eq 4 ]
 		then
 			lscpuInfo $i
-			versionApp="numactl --physcpubind=+$scatterThreads --cpubind=$nodesInUse" #scatter
+			versionApp="numactl --physcpubind=+$scatterThreads --cpubind=$scatterNodes" #scatter
 		fi
 
 		for ((j=1; j<=$testQtd; j++))
