@@ -49,7 +49,7 @@ for g in range (0,9): #9 benchmarks
 			plt.xticks(r1, graphThreads, rotation ='horizontal')
 
 		if v==1:
-			plt.bar(r2, graphTime, width=barWidth, edgecolor='black', label = "Round Robin")
+			plt.bar(r2, graphTime, width=barWidth, edgecolor='black', label = "Round Robin (RAM)")
 			plt.errorbar(r2, graphTime, graphStddev, marker='^', linestyle='None', color='black')
 			plt.xticks(r2, graphThreads, rotation ='horizontal')
 
@@ -64,7 +64,7 @@ for g in range (0,9): #9 benchmarks
 			plt.xticks(r4, graphThreads, rotation ='horizontal')
 
 		if v==4:
-			plt.bar(r5, graphTime, width=barWidth, edgecolor='black', label = "Scatter")
+			plt.bar(r5, graphTime, width=barWidth, edgecolor='black', label = "Scatter (Threads")
 			plt.errorbar(r5, graphTime, graphStddev, marker='^', linestyle='None', color='black')
 			plt.xticks(r5, graphThreads, rotation ='horizontal')
 
