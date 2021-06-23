@@ -26,7 +26,6 @@ function lscpuInfo(){
 	nodeCount=$(wc -l lscpuCompact.txt | awk '{ print $1 }')
 	coresPerNode=$((cores/nodeCount))
 
-
 	if [ $thr -ge $coresPerNode ]
 	then
 		for ((node=1; node<$nodeCount; node++))
@@ -39,18 +38,23 @@ function lscpuInfo(){
 		done
 	fi
 
-	echo "nodesInUse"
-	echo $nodesInUse
-
-	#FOR SCATTER	
-	scatterThreads="0-"$(($((thr%$((coresPerNode+1))))-1))
-
-	echo "scatterThreads"
-	echo $scatterThreads
-	echo " "
-
+	#FOR SCATTER
+	
+	incr=1
+	for (( i=1; i<=$(($thr/$nodeCount)); i=i+1 ))
+	do
+		for (( j=0; j<$nodeCount; j=j+1 ))
+		do
+			if [[ $j -eq 0 && $i -eq 1 ]]
+			then
+				scatterThreads="0"
+			else
+				scatterThreads=$scatterThreads,"$(($(($j*$coresPerNode))+$(($incr-1))))"
+			fi
+		done
+		incr=$(($incr+1))
+	done
 }
-
 
 function timeDataEdit(){
 	sed -r 's/\s+//g' timeDataFull.txt
@@ -89,7 +93,6 @@ function stats(){
 
 function benchConfig(){
 	version=$1
-
 	for (( i=0; i<=$threads; i=i+$interval ))
 	do
 
@@ -193,6 +196,7 @@ function benchConfig(){
 	done
 }
 
+#MAIN
 
 currDir=$(echo $(pwd))
 currTSTM="${currDir}/tinystmBiblio"
