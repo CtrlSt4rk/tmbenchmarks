@@ -23,7 +23,7 @@ function lscpuInfo(){
 	coresPerNode=$((cores/nodeCount))
 
 	#FOR COMPACT
-	if [[ $version -eq 2 || $version -eq 3 ]]
+	if [[ $version -eq 3 || $version -eq 4 ]]
 	then
 		nodesInUse=0
 
@@ -41,15 +41,22 @@ function lscpuInfo(){
 	fi
 
 	#FOR SCATTER
-	if [ $version -eq 4 ]
+	flag=0
+	if [ $version -eq 2 ]
 	then
 		incr=1
+		if [[ $thr -eq 1 && $nodeCount -gt 1 ]]
+		then
+			nodeCountAux=$nodeCount
+			nodeCount=1
+			flag=1
+		fi
 
-		for (( i=1; i<=$(($thr/$nodeCount)); i=i+1 ))
+		for (( a=1; a<=$(($thr/$nodeCount)); a=a+1 ))
 		do
 			for (( j=0; j<$nodeCount; j=j+1 ))
 			do
-				if [[ $j -eq 0 && $i -eq 1 ]]
+				if [[ $j -eq 0 && $a -eq 1 ]]
 				then
 					scatterThreads="0"
 				else
@@ -59,13 +66,18 @@ function lscpuInfo(){
 			incr=$(($incr+1))
 		done
 
-		for (( i=0; i<$nodeCount; i=i+1 ))
+		if [ $flag -eq 1 ]
+		then
+			nodeCount=$nodeCountAux
+		fi
+
+		for (( a=0; a<$nodeCount; a=a+1 ))
 		do
-			if [ $i -eq 0 ]
+			if [ $a -eq 0 ]
 			then
 				scatterNodes="0"
 			else
-				scatterNodes=$scatterNodes,"$i"
+				scatterNodes=$scatterNodes,"$a"
 			fi
 		done
 	fi
@@ -122,31 +134,34 @@ function benchConfig(){
 		then
 			versionApp="numactl --interleave=all" #round robin
 		fi
-
 		if [ $version -eq 2 ]
-		then
-			lscpuInfo $i
-			versionApp="numactl --membind=$nodesInUse" #"compact RAM"
-		fi
-		if [ $version -eq 3 ]
-		then
-			lscpuInfo $i
-			versionApp="numactl --cpubind=$nodesInUse" #"compact THREADS"
-		fi
-		if [ $version -eq 4 ]
 		then
 			lscpuInfo $i
 			versionApp="numactl --physcpubind=+$scatterThreads --cpubind=$scatterNodes" #scatter
 		fi
 
+		if [ $version -eq 3 ]
+		then
+			lscpuInfo $i
+			versionApp="numactl --membind=$nodesInUse" #"compact RAM"
+		fi
+		if [ $version -eq 4 ]
+		then
+			lscpuInfo $i
+			versionApp="numactl --cpubind=$nodesInUse" #"compact THREADS"
+		fi
+		
+
 		for ((j=1; j<=$testQtd; j++))
 		do
+			echo $versionApp
 			$versionApp ./stamp/tinystm/genome/genome -g16384 -s64 -n16777216 -t${i} >> tempUn.txt
 		done
 			dataProcess
 			stats
 		for ((j=1; j<=$testQtd; j++))
 		do
+			echo $versionApp
 			$versionApp ./stamp/tinystm/intruder/intruder -a10 -l128 -n262144 -s1 -t${i} >> tempUn.txt
 		done
 			dataProcess
@@ -154,6 +169,7 @@ function benchConfig(){
 		
 		for ((j=1; j<=$testQtd; j++))
 		do
+			echo $versionApp
 			$versionApp ./stamp/tinystm/kmeans/kmeans -m40 -n40 -T0.00001 -i stamp/data/kmeans/inputs/random-n65536-d32-c16.txt -L -t${i} >> tempUn.txt #low contention
 		done
 			dataProcess
@@ -161,6 +177,7 @@ function benchConfig(){
 		
 		for ((j=1; j<=$testQtd; j++))
 		do
+			echo $versionApp
 			$versionApp ./stamp/tinystm/kmeans/kmeans -m15 -n15 -T0.00001 -i stamp/data/kmeans/inputs/random-n65536-d32-c16.txt -t${i} >> tempUn.txt #high contention
 		done
 			dataProcess
@@ -168,6 +185,7 @@ function benchConfig(){
 		
 		for ((j=1; j<=$testQtd; j++))
 		do
+			echo $versionApp
 			$versionApp ./stamp/tinystm/labyrinth/labyrinth -i stamp/data/labyrinth/inputs/random-x512-y512-z7-n512.txt -t${i} >> tempUn.txt 
 		done	
 			dataProcess
@@ -182,6 +200,7 @@ function benchConfig(){
 		
 		for ((j=1; j<=$testQtd; j++))
 		do
+			echo $versionApp
 			$versionApp ./stamp/tinystm/vacation/vacation -n2 -q90 -u98 -r1048576 -T4194304 -L -t${i} >> tempUn.txt  #low contention
 		done	
 			dataProcess
@@ -189,6 +208,7 @@ function benchConfig(){
 		
 		for ((j=1; j<=$testQtd; j++))
 		do
+			echo $versionApp
 			$versionApp ./stamp/tinystm/vacation/vacation -n4 -q60 -u90 -r1048576 -T4194304 -t${i} >> tempUn.txt  #high contention
 		done	
 			dataProcess
@@ -196,6 +216,7 @@ function benchConfig(){
 		
 		for ((j=1; j<=$testQtd; j++))
 		do
+			echo $versionApp
 			$versionApp ./stamp/tinystm/yada/yada -a15 -i stamp/data/yada/inputs/ttimeu1000000.2 -t${i} >> tempUn.txt 
 		done	
 			dataProcess
