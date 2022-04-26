@@ -1,4 +1,5 @@
 # tmbenchmarks
-Pesquisa de comportamento de benchmarks com memória transacional em sistemas Linux, para ser utilizado com tm-benchmarks (tinystm) (em desenvolvimento)
 
-Utilizando como base o TinySTM (https://github.com/patrickmarlier/tinystm) e a suite de benchmarks STAMP (https://github.com/kozyraki/stamp), ambos já inclusos.
+Benchmark behavior research with transactional memory on Linux systems, to be used with tm-benchmarks (tinystm)
+
+Using TinySTM as a base (https://github.com/patrickmarlier/tinystm) and the STAMP benchmark suite (https://github.com/kozyraki/stamp), both already included.
